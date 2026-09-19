@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vẽ khung trên ảnh tĩnh</title>
+<style>
+  body { background:#111; color:#eee; font-family:Arial; margin:0; padding:20px; display:flex; flex-direction:column; align-items:center; }
+  .toolbar { margin-bottom:12px; display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
+  button, input[type=file] { padding:8px 12px; border-radius:6px; border:1px solid #444; background:#222; color:#eee; cursor:pointer; }
+  #trangThai { margin:8px 0; color:#0f0; font-size:14px; }
+  .wrap { border:2px solid #444; border-radius:6px; overflow:auto; max-width:95vw; max-height:80vh; background:#000; }
+  canvas { display:block; cursor:crosshair; max-width:100%; height:auto; }
+</style>
+</head>
+<body>
+<h2>Vẽ khung trên ảnh tĩnh</h2>
+
+<div class="toolbar">
+  <input type="file" id="chonAnh" accept="image/*">
+  <button id="xoaHet">Xóa tất cả khung</button>
+</div>
+
+<div id="trangThai">Chưa chọn ảnh.</div>
+
+<div class="wrap">
+  <canvas id="canvas" width="800" height="600"></canvas>
+</div>
+
+<p style="color:#aaa;font-size:13px;text-align:center;max-width:700px;">
+  Chỉ dùng cho ảnh tĩnh. Giữ chuột trái và kéo trên ảnh để vẽ khung. Không dùng cho game/overlay.
+</p>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const inputAnh = document.getElementById('chonAnh');
+const nutXoa = document.getElementById('xoaHet');
+const trangThai = document.getElementById('trangThai');
+
+let anhNen = new Image();
+let danhSachKhung = [];
+let dangVe = false;
+let batDauX = 0, batDauY = 0, hienTaiX = 0, hienTaiY = 0;
+
+function veLai() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#222';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  if (anhNen.src && anhNen.complete && anhNen.naturalWidth > 0) {
+    ctx.drawImage(anhNen, 0, 0, canvas.width, canvas.height);
+  } else {
+    ctx.fillStyle = '#888';
+    ctx.font = '20px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('Chưa có ảnh. Hãy chọn một ảnh.', canvas.width / 2, canvas.height / 2);
+  }
+
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = '#ffff00';
+  danhSachKhung.forEach(k => {
+    ctx.strokeRect(k.x, k.y, k.w, k.h);
+  });
+
+  if (dangVe) {
+    ctx.strokeStyle = '#00ff88';
+    ctx.strokeRect(batDauX, batDauY, hienTaiX - batDauX, hienTaiY - batDauY);
+  }
+}
+
+function layToaDo(e) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  return {
+    x: (e.clientX - rect.left) * scaleX,
+    y: (e.clientY - rect.top) * scaleY
+  };
+}
+
+inputAnh.addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = ev => {
+    anhNen = new Image();
+    anhNen.onload = () => {
+      canvas.width = anhNen.naturalWidth;
+      canvas.height = anhNen.naturalHeight;
+      danhSachKhung = [];
+      trangThai.textContent = 'Đã tải ảnh: ' + file.name;
+      veLai();
+    };
+    anhNen.onerror = () => {
+      trangThai.textContent = 'Lỗi: không đọc được ảnh.';
+    };
+    anhNen.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+canvas.addEventListener('mousedown', e => {
+  if (!anhNen.src) return;
+  const p = layToaDo(e);
+  dangVe = true;
+  batDauX = p.x; batDauY = p.y;
+  hienTaiX = p.x; hienTaiY = p.y;
+  veLai();
+});
+
+canvas.addEventListener('mousemove', e => {
+  if (!dangVe) return;
+  const p = layToaDo(e);
+  hienTaiX = p.x; hienTaiY = p.y;
+  veLai();
+});
+
+canvas.addEventListener('mouseup', () => {
+  if (!dangVe) return;
+  dangVe = false;
+
+  const w = hienTaiX - batDauX;
+  const h = hienTaiY - batDauY;
+
+  if (Math.abs(w) > 5 && Math.abs(h) > 5) {
+    danhSachKhung.push({
+      x: Math.min(batDauX, hienTaiX),
+      y: Math.min(batDauY, hienTaiY),
+      w: Math.abs(w),
+      h: Math.abs(h)
+    });
+  }
+  veLai();
+});
+
+canvas.addEventListener('mouseleave', () => {
+  if (dangVe) {
+    dangVe = false;
+    veLai();
+  }
+});
+
+nutXoa.addEventListener('click', () => {
+  danhSachKhung = [];
+  veLai();
+});
+
+veLai();
+</script>
+</body>
+</html>
