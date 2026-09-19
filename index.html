@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hộp bao quanh đối tượng trong ảnh</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #111;
+            color: #eee;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .khung-bao {
+            position: relative;
+            display: inline-block;
+            border: 3px solid #00ff88;
+            border-radius: 6px;
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.6);
+            margin-top: 20px;
+        }
+
+        .khung-bao img {
+            display: block;
+            max-width: 100%;
+            height: auto;
+        }
+
+        .nhan {
+            position: absolute;
+            top: -28px;
+            left: 0;
+            background: #00ff88;
+            color: #000;
+            font-size: 14px;
+            font-weight: bold;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h2>Hộp bao quanh đối tượng trong ảnh tĩnh</h2>
+    <p>Thay đường dẫn ảnh bên dưới bằng ảnh của bạn.</p>
+
+    <!-- Hộp bao bọc khung người -->
+    <div class="khung-bao">
+        <span class="nhan">Đối tượng</span>
+        <img src="https://via.placeholder.com/300x400/333/fff?text=Anh+chan+dung" alt="Ảnh minh họa">
+    </div>
+</body>
+</html>
