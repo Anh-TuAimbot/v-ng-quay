@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>ANH TÚ VIP · ESP SIMULATOR</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+  :root{
+    --accent:#00ffcc;
+    --enemy:#ff4757;
+    --s:1;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;overflow:hidden}
+  body{
+    background:#000;color:#fff;
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    user-select:none;-webkit-user-select:none;
+  }
+
+  /* ---------------- SETUP ---------------- */
+  .setup{
+    position:fixed;inset:0;z-index:1;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:16px;padding:28px;text-align:center;
+    background:radial-gradient(circle at 50% 25%,#0a2e28 0%,#000 65%);
+  }
+  .setup h1{
+    font-size:22px;letter-spacing:2px;color:var(--accent);
+    text-shadow:0 0 18px rgba(0,255,204,.55);
+  }
+  .setup p{font-size:13px;line-height:1.65;color:#8b9a97;max-width:430px}
+  .drop{
+    width:min(430px,100%);padding:18px;border-radius:14px;
+    border:1.5px dashed #2b4a45;background:rgba(0,255,204,.04);
+    display:flex;flex-direction:column;align-items:center;gap:7px;
+    font-size:13px;color:#9fd8cd;cursor:pointer;transition:.2s;
+  }
+  .drop:hover,.drop.over{border-color:var(--accent);background:rgba(0,255,204,.1)}
+  .drop i{font-size:22px;color:var(--accent)}
+  .drop small{color:#5d7570;font-size:11px;line-height:1.5}
+  .btn-primary{
+    border:none;border-radius:12px;cursor:pointer;font-family:inherit;
+    padding:16px 28px;font-size:14px;font-weight:800;letter-spacing:1px;
+    background:var(--accent);color:#04120f;
+    box-shadow:0 0 22px rgba(0,255,204,.5);transition:.15s;
+  }
+  .btn-primary:active{transform:scale(.97)}
+
+  /* ---------------- STAGE ---------------- */
+  .stage{
+    position:fixed;inset:0;display:none;overflow:hidden;touch-action:none;
+    background:radial-gradient(circle at 50% 40%,#1b2a35 0%,#070b0f 70%);
+  }
+  .stage.on{display:block}
+  .bg{
+    position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+    pointer-events:none;-webkit-user-drag:none;
+  }
+
+  /* ---------------- SCAN OVERLAY ---------------- */
+  .scan{
+    position:absolute;inset:0;z-index:3;pointer-events:none;
+    background:
+      repeating-linear-gradient(0deg, rgba(0,255,204,.08) 0 2px, transparent 2px 6px);
+    opacity:0;transition:opacity .35s;
+  }
+  .scan.on{opacity:1;animation:scanmove 1.2s linear infinite}
+  @keyframes scanmove{
+    from{background-position:0 0}
+    to{background-position:0 60px}
+  }
+  .scan-text{
+    position:absolute;z-index:4;top:50%;left:50%;
+    transform:translate(-50%,-50%);
+    font-size:13px;font-weight:800;letter-spacing:3px;
+    color:var(--accent);text-shadow:0 0 12px var(--accent);
+    padding:8px 18px;border-radius:8px;
+    background:rgba(0,0,0,.65);border:1px solid var(--accent);
+    opacity:0;transition:opacity .3s;pointer-events:none;
+  }
+  .scan-text.on{opacity:1}
+
+  /* ---------------- ESP MARKER ---------------- */
+  .esp{
+    position:absolute;
+    transform:translate(-50%,-50%) scale(var(--s));
+    transform-origin:center center;
+    display:flex;flex-direction:column;align-items:center;gap:3px;
+    color:var(--enemy);cursor:grab;touch-action:none;
+    filter:drop-shadow(0 0 5px currentColor);
+    opacity:0;
+    transition:opacity .25s;
+  }
+  .esp.show{opacity:1;animation:pulse 1.1s ease-in-out infinite alternate}
+  .esp.self{color:var(--accent);animation:none;opacity:1}
+  .esp.dragging{cursor:grabbing;animation:none;filter:drop-shadow(0 0 14px currentColor)}
+  @keyframes pulse{from{opacity:.82}to{opacity:1}}
+
+  .esp .label{
+    display:flex;align-items:center;gap:6px;
+    padding:2px 7px;border-radius:5px;white-space:nowrap;
+    font-size:11px;font-weight:800;letter-spacing:.6px;
+    background:rgba(0,0,0,.62);border:1px solid currentColor;
+  }
+  .esp .box{
+    position:relative;width:54px;height:104px;
+    border:2px solid currentColor;border-radius:3px;
+    background:rgba(255,71,87,.07);
+  }
+  .esp .hpbar{
+    position:absolute;left:-2px;right:-2px;bottom:-9px;height:4px;
+    background:rgba(0,0,0,.6);border-radius:2px;overflow:hidden;
+  }
+  .esp .hpbar i{display:block;height:100%;background:currentColor}
+  .esp.self .box{display:none}
+
+  /* ---------------- HUD ---------------- */
+  .hud{
+    position:absolute;z-index:5;
+    left:50%;bottom:calc(12px + env(safe-area-inset-bottom));
+    transform:translateX(-50%);
+    display:flex;gap:8px;align-items:center;
+    padding:8px;border-radius:14px;
+    background:rgba(0,0,0,.55);backdrop-filter:blur(8px);
+    border:1px solid rgba(255,255,255,.12);
+    transition:opacity .25s;
+  }
+  body.hud-hidden .hud{opacity:0;pointer-events:none}
+
+  .hud-btn{
+    display:inline-flex;align-items:center;gap:6px;
+    padding:9px 12px;border-radius:9px;font-size:12px;font-weight:700;
+    background:rgba(255,255,255,.08);color:#e7fffa;
+    border:1px solid rgba(255,255,255,.12);
+    font-family:inherit;cursor:pointer;
+  }
+  .hud-btn:active{background:rgba(255,255,255,.22)}
+  .hud-btn.danger{
+    color:#ff8b95;border-color:rgba(255,71,87,.45);
+    background:rgba(255,71,87,.14);
+  }
+  .hud input[type=range]{width:86px;accent-color:var(--accent)}
+
+  .hotspot{
+    position:fixed;z-index:6;top:0;right:0;width:56px;height:56px;display:none;
+  }
+  body.hud-hidden .hotspot{display:block}
+
+  .hint{
+    position:absolute;z-index:4;
+    top:calc(12px + env(safe-area-inset-top));
+    left:50%;transform:translateX(-50%);
+    font-size:11px;color:rgba(255,255,255,.75);white-space:nowrap;
+    background:rgba(0,0,0,.6);padding:6px 14px;border-radius:20px;
+    transition:opacity .6s;pointer-events:none;text-align:center;
+  }
+  .hint.gone{opacity:0}
+</style>
+</head>
+<body>
+
+  <!-- ============ SETUP ============ -->
+  <div class="setup" id="setup">
+    <h1>ANH TÚ VIP SYSTEM</h1>
+    <p>Chọn <b>ảnh chụp màn hình trong game</b> của bạn làm nền, rồi bấm <b>VÀO TRẬN</b>. Hệ thống sẽ <b>tự động quét và gắn mũi tên ESP</b> lên đầu địch.</p>
+
+    <label class="drop" id="drop">
+      <input type="file" id="bgFile" accept="image/*" hidden>
+      <i class="fa-solid fa-image"></i>
+      <span>Chọn ảnh nền / Kéo–thả / Ctrl+V</span>
+      <small>Nên dùng ảnh chụp ngang tỉ lệ 16:9 để khớp màn hình</small>
+    </label>
+
+    <button class="btn-primary" id="btnStart">VÀO TRẬN NGAY</button>
+  </div>
+
+  <!-- ============ STAGE ============ -->
+  <div class="stage" id="stage">
+    <img class="bg" id="bg"
+         src="https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1600&auto=format&fit=crop"
+         alt="">
+    <div id="espLayer" style="position:absolute;inset:0"></div>
+
+    <div class="scan" id="scan"></div>
+    <div class="scan-text" id="scanText">ĐANG QUÉT MỤC TIÊU...</div>
+
+    <div class="hint" id="hint">Chạm 2 lần để thêm · Kéo để chỉnh · Chạm 2 lần vào mũi tên để xoá</div>
+
+    <div class="hud">
+      <button class="hud-btn" id="btnAdd"><i class="fa-solid fa-plus"></i> Thêm</button>
+      <input type="range" id="scale" min="0.6" max="2" step="0.1" value="1">
+      <button class="hud-btn" id="btnHide"><i class="fa-solid fa-eye-slash"></i></button>
+      <button class="hud-btn danger" id="btnExit"><i class="fa-solid fa-xmark"></i> Thoát</button>
+    </div>
+    <div class="hotspot" id="hotspot"></div>
+  </div>
+
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const stage   = $('#stage');
+  const layer   = $('#espLayer');
+  const bgImg   = $('#bg');
+  const hint    = $('#hint');
+  const setupEl = $('#setup');
+  const scan    = $('#scan');
+  const scanTxt = $('#scanText');
+
+  let objectUrl = null;
+  let enemyCount = 0;
+
+  /* ---------------- ẢNH NỀN ---------------- */
+  function setBgFromFile(file) {
+    if (!file || !file.type.startsWith('image/')) return;
+    if (objectUrl) URL.revokeObjectURL(objectUrl);
+    objectUrl = URL.createObjectURL(file);
+    bgImg.src = objectUrl;
+  }
+
+  $('#bgFile').addEventListener('change', e => setBgFromFile(e.target.files[0]));
+
+  const drop = $('#drop');
+  ['dragenter','dragover'].forEach(ev =>
+    drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
+  ['dragleave','drop'].forEach(ev =>
+    drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
+  drop.addEventListener('drop', e => setBgFromFile(e.dataTransfer.files[0]));
+  drop.addEventListener('click', () => $('#bgFile').click());
+
+  window.addEventListener('paste', e => {
+    const items = e.clipboardData ? [...e.clipboardData.items] : [];
+    const img = items.find(i => i.type.startsWith('image/'));
+    if (img) setBgFromFile(img.getAsFile());
+  });
+
+  /* ---------------- TẠO MARKER ---------------- */
+  function addMarker(xPct, yPct, opts = {}) {
+    const el = document.createElement('div');
+    el.className = 'esp' + (opts.self ? ' self' : '');
+    el.style.left = xPct + '%';
+    el.style.top  = yPct + '%';
+
+    if (opts.self) {
+      el.innerHTML =
+        `<div class="label"><i class="fa-solid fa-location-arrow"></i><span>YOU</span></div>`;
+    } else {
+      enemyCount++;
+      const dist = opts.dist ?? (18 + Math.floor(Math.random() * 60));
+      const hp   = opts.hp   ?? 100;
+      el.innerHTML =
+        `<div class="label">
+           <span>ENEMY_${String(enemyCount).padStart(2,'0')}</span>
+           <span>${dist}m</span>
+         </div>
+         <div class="box"><span class="hpbar"><i style="width:${hp}%"></i></span></div>`;
+    }
+
+    layer.appendChild(el);
+    makeDraggable(el);
+
+    if (opts.delay && !opts.self) {
+      setTimeout(() => el.classList.add('show'), opts.delay);
+    } else if (opts.self) {
+      el.classList.add('show');
+    } else {
+      el.classList.add('show');
+    }
+    return el;
+  }
+
+  /* ---------------- KÉO THẢ + DOUBLE-TAP XOÁ ---------------- */
+  function makeDraggable(el) {
+    let dragging = false, moved = false, lastTap = 0;
+
+    el.addEventListener('pointerdown', e => {
+      e.preventDefault();
+      dragging = true; moved = false;
+      el.classList.add('dragging');
+      try { el.setPointerCapture(e.pointerId); } catch (_) {}
+    });
+
+    el.addEventListener('pointermove', e => {
+      if (!dragging) return;
+      const r = stage.getBoundingClientRect();
+      const x = ((e.clientX - r.left) / r.width)  * 100;
+      const y = ((e.clientY - r.top)  / r.height) * 100;
+      el.style.left = Math.min(100, Math.max(0, x)) + '%';
+      el.style.top  = Math.min(100, Math.max(0, y)) + '%';
+      moved = true;
+    });
+
+    el.addEventListener('pointerup', () => {
+      if (!dragging) return;
+      dragging = false;
+      el.classList.remove('dragging');
+      if (moved) return;
+      const now = Date.now();
+      if (now - lastTap < 320) { el.remove(); return; }
+      lastTap = now;
+    });
+
+    el.addEventListener('pointercancel', () => {
+      dragging = false;
+      el.classList.remove('dragging');
+    });
+  }
+
+  /* ---------------- DOUBLE-TAP TRÊN NỀN ---------------- */
+  let lastTapTime = 0, lastTapX = 0, lastTapY = 0;
+
+  stage.addEventListener('pointerdown', e => {
+    if (e.target.closest('.esp') || e.target.closest('.hud') || e.target.closest('.hotspot')) return;
+
+    const now = Date.now();
+    const rect = stage.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    if (now - lastTapTime < 300 && Math.hypot(x - lastTapX, y - lastTapY) < 40) {
+      const xPct = (x / rect.width) * 100;
+      const yPct = (y / rect.height) * 100;
+      addMarker(xPct, yPct, { dist: 30 + Math.floor(Math.random() * 50), hp: 100 });
+      lastTapTime = 0;
+    } else {
+      lastTapTime = now;
+      lastTapX = x;
+      lastTapY = y;
+    }
+  });
+
+  /* ---------------- FULLSCREEN ---------------- */
+  async function goFullscreen() {
+    const el = document.documentElement;
+    try {
+      if (el.requestFullscreen)            await el.requestFullscreen({ navigationUI: 'hide' });
+      else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+    } catch (_) {}
+    try {
+      if (screen.orientation && screen.orientation.lock)
+        await screen.orientation.lock('landscape');
+    } catch (_) {}
+  }
+
+  async function leaveFullscreen() {
+    try {
+      if (document.fullscreenElement && document.exitFullscreen)
+        await document.exitFullscreen();
+    } catch (_) {}
+    try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); }
+    catch (_) {}
+  }
+
+  /* ---------------- AUTO HIỆN MŨI TÊN ---------------- */
+  // Danh sách vị trí địch mẫu (% theo màn hình) - tự gắn khi vào trận
+  const AUTO_ENEMIES = [
+    { x: 24, y: 40, dist: 42, hp: 100 },
+    { x: 47, y: 32, dist: 28, hp: 100 },
+    { x: 62, y: 36, dist: 51, hp: 85  },
+    { x: 78, y: 44, dist: 66, hp: 100 },
+    { x: 38, y: 55, dist: 19, hp: 60  },
+  ];
+
+  function autoScanAndShow() {
+    // Hiện hiệu ứng quét
+    scan.classList.add('on');
+    scanTxt.classList.add('on');
+
+    setTimeout(() => {
+      scan.classList.remove('on');
+      scanTxt.textContent = 'ĐÃ KHOÁ ' + AUTO_ENEMIES.length + ' MỤC TIÊU';
+      setTimeout(() => scanTxt.classList.remove('on'), 700);
+
+      // Bắn mũi tên lần lượt lên đầu từng địch
+      AUTO_ENEMIES.forEach((p, i) => {
+        addMarker(p.x, p.y, { dist: p.dist, hp: p.hp, delay: i * 130 });
+      });
+
+      // Mũi tên YOU luôn ở dưới cùng giữa màn hình
+      addMarker(50, 78, { self: true });
+
+    }, 1100);
+  }
+
+  /* ---------------- BẬT / TẮT ---------------- */
+  function start() {
+    setupEl.style.display = 'none';
+    stage.classList.add('on');
+
+    layer.innerHTML = '';
+    enemyCount = 0;
+    scan.classList.remove('on');
+    scanTxt.classList.remove('on');
+
+    goFullscreen();
+    autoScanAndShow();
+
+    hint.classList.remove('gone');
+    clearTimeout(hint._t);
+    hint._t = setTimeout(() => hint.classList.add('gone'), 6500);
+  }
+
+  async function stop() {
+    await leaveFullscreen();
+    layer.innerHTML = '';
+    enemyCount = 0;
+    stage.classList.remove('on');
+    document.body.classList.remove('hud-hidden');
+    setupEl.style.display = '';
+  }
+
+  /* ---------------- HUD ---------------- */
+  $('#btnStart').addEventListener('click', start);
+  $('#btnExit').addEventListener('click', stop);
+
+  $('#btnAdd').addEventListener('click', () => {
+    addMarker(50, 50, { dist: 30 + Math.floor(Math.random() * 50), hp: 100 });
+  });
+
+  $('#scale').addEventListener('input', e => {
+    layer.style.setProperty('--s', e.target.value);
+  });
+
+  $('#btnHide').addEventListener('click', () => {
+    document.body.classList.add('hud-hidden');
+    hint.classList.add('gone');
+  });
+
+  $('#hotspot').addEventListener('click', () => {
+    document.body.classList.remove('hud-hidden');
+  });
+})();
+</script>
+</body>
+</html>
