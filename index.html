@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FREE FIRE MENU VIP - CYBER GREEN</title>
+    <style>
+        :root {
+            --green-primary: #00ff66;
+            --green-glow: #00ff88;
+            --green-dark: #002b11;
+            --bg-card: rgba(4, 20, 10, 0.9);
+            --black-bg: #030a05;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--black-bg);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Matrix Canvas Background */
+        #matrix-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            opacity: 0.35;
+            pointer-events: none;
+        }
+
+        /* Main Card Container */
+        .card {
+            position: relative;
+            z-index: 10;
+            width: 90%;
+            max-width: 420px;
+            background: var(--bg-card);
+            border: 1px solid var(--green-primary);
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 0 25px rgba(0, 255, 102, 0.25),
+                        inset 0 0 15px rgba(0, 255, 102, 0.1);
+            backdrop-filter: blur(10px);
+            margin: 20px 0;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 22px;
+        }
+
+        .title {
+            color: var(--green-primary);
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            text-shadow: 0 0 10px rgba(0, 255, 102, 0.7);
+        }
+
+        .subtitle {
+            color: #a0cfa0;
+            font-size: 13px;
+            margin-top: 5px;
+            font-weight: 400;
+        }
+
+        .section-title {
+            color: #ffcc00;
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 15px;
+            margin-top: 5px;
+        }
+
+        /* Menu Options & Custom Toggles */
+        .option-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .option-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0, 40, 15, 0.6);
+            border: 1px solid rgba(0, 255, 102, 0.2);
+            padding: 14px 16px;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .option-item:active {
+            transform: scale(0.98);
+        }
+
+        .option-label {
+            font-size: 14px;
+            font-weight: 500;
+            color: #e0ffe0;
+        }
+
+        /* Switch Toggle styling */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 26px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #1a3320;
+            transition: .3s;
+            border-radius: 34px;
+            border: 1px solid rgba(0, 255, 102, 0.3);
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: #88a888;
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--green-primary);
+            box-shadow: 0 0 10px var(--green-glow);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(22px);
+            background-color: #000;
+        }
+
+        /* Action Buttons */
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 14px 10px;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 700;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .btn-ff {
+            background: linear-gradient(135deg, #ff4e00, #ec008c);
+        }
+
+        .btn-ffmax {
+            background: linear-gradient(135deg, #7928ca, #4383ff);
+        }
+
+        .btn:active {
+            transform: translateY(2px) scale(0.97);
+            opacity: 0.9;
+        }
+
+        /* Audio Note Notice */
+        .music-notice {
+            text-align: center;
+            font-size: 12px;
+            color: #70a070;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        /* Status Toast */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--green-primary);
+            color: #000;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 13px;
+            box-shadow: 0 0 15px var(--green-glow);
+            transition: all 0.3s ease;
+            opacity: 0;
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Matrix Background Animation -->
+    <canvas id="matrix-canvas"></canvas>
+
+    <!-- Main VIP Menu Card -->
+    <div class="card">
+        <div class="header">
+            <div class="title">FREE FIRE MENU VIP</div>
+            <div class="subtitle">Trình Tối Ưu Hóa & Kích Hoạt Cấu Hình Game</div>
+        </div>
+
+        <div class="section-title">CẤU HÌNH CHỨC NĂNG</div>
+
+        <div class="option-list">
+            <div class="option-item">
+                <span class="option-label">Tăng Nhạy Màn Hình</span>
+                <label class="switch">
+                    <input type="checkbox" onchange="toggleFeature('Tăng Nhạy Màn Hình', this)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="option-item">
+                <span class="option-label">Ổn Định FPS (60 - 90 FPS)</span>
+                <label class="switch">
+                    <input type="checkbox" onchange="toggleFeature('Ổn Định FPS', this)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="option-item">
+                <span class="option-label">Hỗ Trợ Bám Tâm (Aim Assist)</span>
+                <label class="switch">
+                    <input type="checkbox" onchange="toggleFeature('Hỗ Trợ Bám Tâm', this)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="option-item">
+                <span class="option-label">Fix Lố Tâm (Anti-Overaim)</span>
+                <label class="switch">
+                    <input type="checkbox" onchange="toggleFeature('Fix Lố Tâm', this)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="option-item">
+                <span class="option-label">Nhẹ Tâm</span>
+                <label class="switch">
+                    <input type="checkbox" onchange="toggleFeature('Nhẹ Tâm', this)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <div class="section-title">VÀO GAME TRỰC TIẾP</div>
+
+        <div class="btn-group">
+            <button class="btn btn-ff" onclick="launchGame('Free Fire thường', 'freefire://')">
+                🔥 FREE FIRE
+            </button>
+            <button class="btn btn-ffmax" onclick="launchGame('Free Fire MAX', 'freefiremax://')">
+                ⚡ FF MAX
+            </button>
+        </div>
+
+        <div class="music-notice">
+            🎵 <span id="music-text">Chạm vào màn hình để mở nhạc "Tìm Em"</span>
+        </div>
+    </div>
+
+    <!-- Toast Notice -->
+    <div id="toast" class="toast">Đã kích hoạt tính năng!</div>
+
+    <!-- Audio Element -->
+    <audio id="bg-music" loop preload="auto">
+        <source src="https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=lofi-study-112191.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        // Matrix Rain Canvas Effect
+        const canvas = document.getElementById('matrix-canvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        const chars = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+        const fontSize = 14;
+        let columns = Math.floor(canvas.width / fontSize);
+        let drops = Array(columns).fill(1);
+
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(3, 10, 5, 0.08)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#00ff66';
+            ctx.font = fontSize + 'px monospace';
+
+            for (let i = 0; i < drops.length; i++) {
+                const text = chars.charAt(Math.floor(Math.random() * chars.length));
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+            }
+        }
+        setInterval(drawMatrix, 35);
+
+        // Music Auto-play Logic on First Touch
+        const audio = document.getElementById('bg-music');
+        let musicStarted = false;
+
+        function startMusic() {
+            if (!musicStarted) {
+                audio.play().then(() => {
+                    musicStarted = true;
+                    document.getElementById('music-text').textContent = "Đang phát nhạc: Tìm Em 🎶";
+                }).catch(() => {});
+            }
+        }
+
+        document.body.addEventListener('touchstart', startMusic, { once: true });
+        document.body.addEventListener('click', startMusic, { once: true });
+
+        // Toggle Feature Handler
+        function toggleFeature(name, element) {
+            startMusic();
+            const status = element.checked ? "Đã BẬT" : "Đã TẮT";
+            showToast(`${name}: ${status}`);
+        }
+
+        // Launch Game Handler
+        function launchGame(gameName, scheme) {
+            startMusic();
+            showToast(`Đang mở ${gameName}...`);
+            setTimeout(() => {
+                window.location.href = scheme;
+            }, 800);
+        }
+
+        // Toast Notification Function
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 1800);
+        }
+    </script>
+</body>
+</html>
